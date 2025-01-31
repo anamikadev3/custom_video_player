@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Video Player</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #111;
+        color: white;
+        margin: 0;
+        padding: 0;
+      }
+      .video-container {
+        position: relative;
+        max-width: 800px;
+        width: 90%;
+      }
+      video {
+        width: 100%;
+        display: block;
+        border-radius: 8px;
+      }
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        flex-wrap: wrap;
+        border-radius: 0 0 8px 8px;
+      }
+      .controls button,
+      .controls input {
+        margin: 5px;
+      }
+      .controls button {
+        min-width: 80px;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        background: #c71616;
+        border: none;
+        color: white;
+        border-radius: 5px;
+      }
+      .controls input[type="range"] {
+        flex: 2;
+        width: 100%;
+        max-width: 150px;
+      }
+      .skip-intro {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #c71616;
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        display: none;
+        font-size: 14px;
+        border-radius: 5px;
+      }
+      @media (max-width: 600px) {
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+          padding: 5px;
+        }
+        .controls button {
+          font-size: 14px;
+          padding: 8px;
+        }
+        .controls input[type="range"] {
+          max-width: 100%;
+        }
+        .skip-intro {
+          font-size: 12px;
+          padding: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="video-container">
+      <video
+        id="video"
+        src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        controls
+      ></video>
+      <button id="skipIntro" class="skip-intro">
+        Skip Intro <span id="countdown"></span>
+      </button>
+      <div class="controls">
+        <button id="playPause">Play</button>
+        <input type="range" id="seekBar" min="0" value="0" step="1" />
+        <input type="range" id="volume" min="0" max="1" step="0.1" value="1" />
+        <button id="fullscreen">Fullscreen</button>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const video = document.querySelector("#video");
+        const playPauseBtn = document.querySelector("#playPause");
+        const seekBar = document.querySelector("#seekBar");
+        const volumeSlider = document.querySelector("#volume");
+        const skipIntroBtn = document.querySelector("#skipIntro");
+        const countdown = document.querySelector("#countdown");
+        const fullscreenBtn = document.querySelector("#fullscreen");
+        const INTRO_DURATION = 10;
+        let skipTimeLeft = INTRO_DURATION;
+        let skipTimer;
+
+        playPauseBtn.addEventListener("click", function () {
+          if (video.paused) {
+            video.play();
+            playPauseBtn.textContent = "Pause";
+          } else {
+            video.pause();
+            playPauseBtn.textContent = "Play";
+          }
+        });
+
+        video.addEventListener("timeupdate", function () {
+          seekBar.value = (video.currentTime / video.duration) * 100;
+        });
+
+        seekBar.addEventListener("input", function () {
+          video.currentTime = (seekBar.value / 100) * video.duration;
+        });
+
+        volumeSlider.addEventListener("input", function () {
+          video.volume = volumeSlider.value;
+        });
+
+        skipIntroBtn.addEventListener("click", function () {
+          video.currentTime = Math.min(
+            video.currentTime + INTRO_DURATION,
+            video.duration
+          );
+          skipIntroBtn.style.display = "none";
+          localStorage.setItem("skipPreference", "true");
+        });
+
+        fullscreenBtn.addEventListener("click", function () {
+          if (!document.fullscreenElement) {
+            video.requestFullscreen();
+          } else {
+            document.exitFullscreen();
+          }
+        });
+
+        function updateCountdown() {
+          countdown.textContent = `(${skipTimeLeft}s)`;
+        }
+
+        function handleSkipIntroVisibility() {
+          const hasSkipped = localStorage.getItem("skipPreference") === "true";
+          if (!hasSkipped) {
+            skipIntroBtn.style.display = "block";
+            updateCountdown();
+
+            skipTimer = setInterval(function () {
+              skipTimeLeft--;
+              updateCountdown();
+              if (skipTimeLeft <= 0) {
+                skipIntroBtn.style.display = "none";
+                clearInterval(skipTimer);
+              }
+            }, 1000);
+          }
+        }
+
+        handleSkipIntroVisibility();
+      });
+    </script>
+  </body>
+</html>
